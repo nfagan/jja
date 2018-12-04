@@ -14,7 +14,7 @@ end
 
 function labels_file = make_labels_main(files, params)
 
-unified_file = files.unified;
+unified_file = shared_utils.general.get( files, 'unified' );
 
 trial_data = unified_file.trial_data;
 

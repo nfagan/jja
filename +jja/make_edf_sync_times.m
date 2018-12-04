@@ -14,8 +14,8 @@ end
 
 function sync_file = make_sync_main(files, params)
 
-unified_file = files.unified;
-edf_file = files.edf;
+unified_file = shared_utils.general.get( files, 'unified' );
+edf_file = shared_utils.general.get( files, 'edf' );
 
 mat_start_times = arrayfun( @(x) x.events.trial_start, unified_file.trial_data );
 edf_start_times = edf_file.sync_times;

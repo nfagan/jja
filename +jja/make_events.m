@@ -14,7 +14,7 @@ end
 
 function events_file = make_events_main(files, params)
 
-unified_file = files.unified;
+unified_file = shared_utils.general.get( files, 'unified' );
 
 event_key = { 'trial_start', 'fixation', 'display_random_vs_info_cues' ...
   , 'look_to_random_vs_info', 'choose_random_vs_info', 'display_info_cues' ...

@@ -14,7 +14,7 @@ end
 
 function roi_file = make_roi_main(files, params)
 
-unified_file = files.unified;
+unified_file = shared_utils.general.get( files, 'unified' );
 
 roi_file = struct();
 roi_file.identifier = unified_file.identifier;

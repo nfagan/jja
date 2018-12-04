@@ -21,7 +21,7 @@ end
 
 function edf_file = make_samples_main(files, params)
 
-edf_obj = files.edf;
+edf_obj = shared_utils.general.get( files, 'edf' );
 
 id = get_edf_identifier( edf_obj, edf_obj.filename );
 
