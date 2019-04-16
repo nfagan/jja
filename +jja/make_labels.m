@@ -29,10 +29,17 @@ for i = 1:n_trials
   selected_cue_name = dat.selected_cue;
   reward_cue_name = dat.shown_reward_cue;
   social_image_name = jja.field_or( dat, 'shown_social_image', '' );
+  random_location = dat.random_location;
+  info_location = dat.info_location;
   
   if ( isempty(selected_cue_name) ), selected_cue_name = 'none'; end
   if ( isempty(reward_cue_name) ), reward_cue_name = 'none'; end
   if ( isempty(social_image_name) ), social_image_name = 'none'; end
+  if ( isempty(info_location) ), info_location = 'none'; end
+  if ( isempty(random_location) ), random_location = 'none'; end
+  
+  info_location = get_direction_label( info_location );
+  random_location = get_direction_label( random_location );
   
   addsetcat( tmp_labs, 'block', sprintf('block_%d', dat.block_number) );
   addsetcat( tmp_labs, 'trial_type', dat.trial_type );
@@ -41,6 +48,9 @@ for i = 1:n_trials
   addsetcat( tmp_labs, 'social_image', sprintf('social_image_%s', social_image_name) );
   addsetcat( tmp_labs, 'reward_type', dat.reward_type ); 
   addsetcat( tmp_labs, 'error', get_error_label(dat) );
+  
+  addsetcat( tmp_labs, 'info_location', sprintf('info_location_%s', info_location) );
+  addsetcat( tmp_labs, 'random_location', sprintf('random_location_%s', random_location) );
   
   append( labs, tmp_labs );
 end
@@ -68,6 +78,21 @@ labels_file.identifier = unified_file.identifier;
 labels_file.params = params;
 labels_file.labels = categorical( labs );
 labels_file.categories = getcats( labs );
+
+end
+
+function dir = get_direction_label(direction)
+
+switch ( direction )
+  case 'center-left'
+    dir = 'left';
+  case 'center-right'
+    dir = 'right';
+  case 'center'
+    dir = 'center';
+  otherwise
+    dir = direction;
+end
 
 end
 

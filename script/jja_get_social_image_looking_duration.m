@@ -1,58 +1,35 @@
 function out = jja_get_social_image_looking_duration(varargin)
 
 defaults = jja.get_common_make_defaults();
+defaults.start_event = 'display_social_image';
+defaults.stop_event = 'reward';
 
-params = jja.parsestruct( defaults, varargin );
+inputs = { 'events', 'labels', 'edf_sync', 'edf', 'rois' };
+output = '';
 
-conf = params.config;
+[params, runner] = jja.get_params_and_loop_runner( inputs, output, defaults, varargin );
+runner.convert_to_non_saving_with_output();
+runner.main_error_handler = 'error';
 
-events_p = jja.gid( 'events', conf );
-labels_p = jja.gid( 'labels', conf );
-sync_p = jja.gid( 'edf_sync', conf );
-edf_p = jja.gid( 'edf', conf );
-roi_p = jja.gid( 'rois', conf );
+results = runner.run( @social_image_main, params );
 
-mats = jja.find_containing( events_p, '.mat', params.files_containing );
-
-lookdurs = rowcell( numel(mats) );
-lookfracs = rowcell( numel(mats) );
-looklabs = rowcell( numel(mats) );
-is_ok = rowones( numel(mats), 'logical' );
-
-parfor i = 1:numel(mats)
-  shared_utils.general.progress( i, numel(mats), mfilename );
-  
-  events_file = shared_utils.io.fload( mats{i} );
-  
-  id = events_file.identifier;
-  
-  try
-    edf_file = jja.load_intermediate( edf_p, id );
-    sync_file = jja.load_intermediate( sync_p, id );
-    roi_file = jja.load_intermediate( roi_p, id );
-    labels_file = jja.load_intermediate( labels_p, id );
-    
-    out = social_image_main( labels_file, edf_file, events_file, sync_file, roi_file );  
-    
-    lookdurs{i} = out.looking_duration;
-    lookfracs{i} = out.looking_fraction;
-    looklabs{i} = out.labels;
-    
-  catch err
-    jja.print_fail_warn( id, err.message );
-    is_ok(i) = false;
-    continue;
-  end
-end
+results(~[results.success]) = [];
+outputs = [ results.output ];
 
 out = struct();
-out.looking_duration = vertcat( lookdurs{is_ok} );
-out.looking_fraction = vertcat( lookfracs{is_ok} );
-out.labels = vertcat( fcat(), looklabs{is_ok} );
+out.looking_duration = vertcat( outputs.looking_duration );
+out.looking_fraction = vertcat( outputs.looking_fraction );
+out.labels = vertcat( fcat(), outputs.labels );
 
 end
 
-function outs = social_image_main(labels_file, edf_file, events_file, sync_file, roi_file)
+function outs = social_image_main(files, params)
+
+labels_file =   shared_utils.general.get( files, 'labels' );
+edf_file =      shared_utils.general.get( files, 'edf' );
+events_file =   shared_utils.general.get( files, 'events' );
+sync_file =     shared_utils.general.get( files, 'edf_sync' );
+roi_file =      shared_utils.general.get( files, 'rois' );
 
 events = events_file.events;
 rects = roi_file.rects;
@@ -70,8 +47,11 @@ lookfrac = rownan( numel(lookdur) );
 event_indices = rownan( numel(lookdur) );
 roi_indices = rownan( numel(lookdur) );
 
-social_image_onset = events(:, events_file.event_key('display_social_image'));
-reward_onset = events(:, events_file.event_key('reward'));
+start_event_name = params.start_event;
+stop_event_name = params.stop_event;
+
+onset_time = events(:, events_file.event_key(start_event_name));
+offset_time = events(:, events_file.event_key(stop_event_name));
 
 mat_starts = sync_file.mat_sync;
 edf_starts = sync_file.edf_sync;
@@ -81,11 +61,12 @@ stp = 1;
 for i = 1:n_rois
   roi_name = roi_names{i};
   rect = rects(roi_name);
+  
   ib = bfw.bounds.rect( x, y, rect );
   
   for j = 1:n_trials
-    img_onset = social_image_onset(j);
-    rwd_onset = reward_onset(j);
+    img_onset = onset_time(j);
+    rwd_onset = offset_time(j);
     
     event_indices(stp) = j;
     roi_indices(stp) = i;
